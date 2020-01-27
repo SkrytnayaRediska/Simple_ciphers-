@@ -1,0 +1,449 @@
+from random import randint
+import tkinter as t
+from tkinter import *
+from PIL import ImageTk
+from tkinter import filedialog
+from string import ascii_letters
+
+
+def getIntKey(key):
+    keyUpd = ''
+    i = 0
+    while i < len(key):
+        if key[i].isdigit():
+            keyUpd += key[i]
+        i += 1
+    if keyUpd == '':
+        return ''
+    else:
+        return int(keyUpd)
+
+
+def getAlphKey(key):
+    keyUpd = ''
+    i = 0
+    while i < len(key):
+        if key[i].isalpha():
+            keyUpd += key[i]
+        i += 1
+    return str(keyUpd)
+
+
+def getalphaMessage(message):
+    messageUpd = ''
+    i = 0
+    while i < len(message):
+        if message[i].isalpha():
+            messageUpd += message[i]
+        i += 1
+    return str(messageUpd)
+
+
+def getalphaMessageVisener(message, alpha):
+    messageUpd = ''
+    i = 0
+    while i < len(message):
+        if message[i] in alpha:
+            messageUpd += message[i]
+        i += 1
+    return str(messageUpd)
+
+
+def cryptedRailWay(key, instr):
+    key = getIntKey(key)
+    if (key == '')or(key<0):
+        return 'Error in key input'
+    if key <= 1:
+        return instr
+    else:
+        instr = getalphaMessage(instr)
+        period = int(2 * (key - 1))
+        i = int(0)
+        instr.strip()
+        while i < len(instr):
+            if instr[i] == ' ':
+                instr = instr[0:i] + instr[(i + 1):len(instr)]
+                i -= 1
+            i += 1
+        res = []
+        for i in range(0, key):
+            res.append('')
+        for i in range(0, len(instr)):
+            ost = int(i % period)
+            num = key - 1 - abs(key - 1 - ost)
+            res[num] = res[num] + instr[i]
+        strout = ''
+        for x in res:
+            strout += x
+        return strout
+
+
+def simbols_back(text, simbols):
+    lenght = len(simbols)
+    for i in range(lenght):
+        paste_in = min(simbols)
+        text.insert(paste_in, simbols[paste_in])
+        del simbols[paste_in]
+    return text
+
+
+def decryptedRailWay(key, ciphertext):
+    ciphertext = getalphaMessage(ciphertext)
+    ciphertext = list(ciphertext)
+    key = getIntKey(key)
+    excess = dict()
+    plaintext = []
+    lenght = len(ciphertext)
+
+    for index in range(lenght - 1, -1, -1):
+        if ciphertext[index] not in ascii_letters:
+            excess.update({index: ciphertext[index]})
+            ciphertext.pop(index)
+
+    try:
+        key = int(key)
+    except:
+        key = 4
+    if key > 1:
+        lenght = len(ciphertext)
+
+        step = key - 1
+        count = lenght // step
+        count_in_rows = {}
+
+        for index in range(1, key + 1, 1):
+            count_in_rows.update({index: count})
+
+        count_in_rows[1] = count // 2 + count % 2
+        count_in_rows[key] = count // 2
+        mod = lenght % step
+        if mod != 0:
+            if count % 2 == 0:
+                for i in range(1, mod + 1):
+                    count_in_rows[i] += 1
+            else:
+                for i in range(key, key - mod, -1):
+                    count_in_rows[i] += 1
+        letters_in_rows = {}
+        i = 0
+        for index_row in range(1, key + 1):
+            temp = []
+            for index in range(count_in_rows[index_row]):
+                temp.append(ciphertext[i])
+                i += 1
+            letters_in_rows.update({index_row: temp})
+        lenght = len(ciphertext)
+        sign = 1
+        index_row = 1
+        for i in range(lenght):
+            plaintext.append(letters_in_rows[index_row][0])
+            letters_in_rows[index_row].pop(0)
+            index_row += sign
+            if index_row == key:
+                sign = -sign
+            if index_row == 1:
+                sign = -sign
+    else: plaintext = ciphertext
+    plaintext = simbols_back(plaintext, excess)
+
+    plaintext = ''.join(plaintext)
+
+    return plaintext
+
+
+def cryptedGrd(part, k):
+    #hole_i = [0, 1, 2, 3, 0, 1, 2, 3, 3, 2, 1, 0, 3, 2, 1, 0]
+    #hole_j = [0, 3, 2, 1, 3, 0, 1, 2, 3, 0, 1, 2, 0, 3, 2, 1]
+    #hole_i = [0, 1, 2, 3, 0, 3, 2, 1, 3, 2, 1, 0, 3, 0, 1, 2]
+    #hole_j = [0, 3, 2, 1, 3, 2, 1, 0, 3, 0, 1, 2, 0, 1, 2, 3]
+    hole_i = [0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3]
+    hole_j = [0, 3, 2, 1, 3, 0, 1, 2, 2, 1, 0, 3, 1, 2, 3, 0]
+    curArr = [['', '', '', ''], ['', '', '', ''], ['', '', '', ''], ['', '', '', '']]
+    outstr = ''
+    sch = 0
+    while sch < len(part):
+        for i in range(0, k):
+            for j in range(0, k):
+                if sch < len(part):
+                    if (i == hole_i[sch]) and (j == hole_j[sch]):
+                        curArr[i][j] += part[sch]
+                        sch += 1
+    for i in range(0, k):
+        for j in range(0, k):
+            outstr += curArr[i][j]
+    return outstr
+
+
+def decGrd(part):
+    key = 4
+    part = getalphaMessage(part)
+    outstr = ''
+    dodo = key ** 2 - len(part) % key ** 2
+    if len(part) % key ** 2 != 0:
+        for i in range(0, dodo):
+            part = part + chr(randint(97, 122))
+    if len(part) == key ** 2:
+        outstr = decryptedGrd(part)
+    if len(part) > key ** 2:
+        arr = []
+        raz = len(part) // key ** 2
+        ot = int(0)
+        do = int(key ** 2)
+        for i in range(0, raz):
+            arr.append(part[ot:do])
+            ot += key ** 2
+            do += key ** 2
+            outstr += decryptedGrd(arr[i])
+
+    return outstr
+
+
+def decryptedGrd(part):
+    key = 4
+    #hole_i = [0, 1, 2, 3, 0, 1, 2, 3, 3, 2, 1, 0, 3, 2, 1, 0]
+    #hole_j = [0, 3, 2, 1, 3, 0, 1, 2, 3, 0, 1, 2, 0, 3, 2, 1]
+    #hole_i = [0, 1, 2, 3, 0, 3, 2, 1, 3, 2, 1, 0, 3, 0, 1, 2]
+    #hole_j = [0, 3, 2, 1, 3, 2, 1, 0, 3, 0, 1, 2, 0, 1, 2, 3]
+    hole_i = [0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3]
+    hole_j = [0, 3, 2, 1, 3, 0, 1, 2, 2, 1, 0, 3, 1, 2, 3, 0]
+    curArr = [['', '', '', ''], ['', '', '', ''], ['', '', '', ''], ['', '', '', '']]
+    outstr = ''
+    sch = 0
+    part = getalphaMessage(part)
+    if part == '': return 'Error in text input'
+    print(len(part))
+    for i in range(0, key):
+        for j in range(0, key):
+            curArr[i][j] += part[sch]
+            sch += 1
+    sch = 0
+    while sch < len(part):
+        for i in range(0, key):
+            for j in range(0, key):
+                if sch < len(part):
+                    if (i == hole_i[sch]) and (j == hole_j[sch]):
+                        outstr += curArr[i][j]
+                        sch += 1
+
+    return outstr
+
+
+def rotgrd(instr):
+    key = 4
+    instr = getalphaMessage(instr)
+    if instr == '': return 'Error in text input'
+    dodo = key ** 2 - (len(instr) % key ** 2)
+    if len(instr) % key ** 2 != 0:
+        for i in range(0, dodo):
+            instr = instr + chr(randint(97, 122))
+
+    arr = []
+    raz = len(instr) // key ** 2
+    ot = int(0)
+    do = int(key ** 2)
+    outed = ''
+    for i in range(0, raz):
+        arr.append(instr[ot:do])
+        ot += key ** 2
+        do += key ** 2
+        print(arr[i])
+        outed += cryptedGrd(arr[i], key)
+    return outed
+
+
+def getProgKey(key, mess, alph):
+    period = 1
+    curr = 0
+    keyProg = ''
+    for i in range(0, len(key)):
+        if key[i] in alph: keyProg += key[i]
+    ln = len(keyProg)
+    print(keyProg)
+    while curr < len(mess):
+        keyProg += alph[(alph.index(key[curr % ln]) + period) % 33]
+        if curr % (ln) == 2:
+            period += 1
+        print(period)
+        curr += 1
+    print(keyProg)
+    return keyProg
+
+
+def VisenerCrypt(key, mess):
+    alphabet = ['А', 'Б', 'В', 'Г', 'Д', 'Е', 'Ё', 'Ж', 'З', 'И', 'Й', 'К', 'Л', 'М', 'Н', 'О', 'П',
+                'Р', 'С', 'Т', 'У', 'Ф', 'Х', 'Ц', 'Ч', 'Ш', 'Щ', 'Ъ', 'Ы', 'Ь', 'Э', 'Ю', 'Я']
+    key = getAlphKey(key)
+    key = key.upper()
+    messageUpd = ''
+    i = 0
+    mess = mess.upper()
+    while i < len(mess):
+        if mess[i] in alphabet:
+            messageUpd += mess[i]
+        i += 1
+    if messageUpd == '':
+        mess = 'ERROR in message input'
+    else:
+        mess = str(messageUpd)
+    if key == '': return 'error in key input'
+    keyProg = getProgKey(key, mess, alphabet)
+    if keyProg == '': return 'error in key input'
+    j = 0
+    outstr = ''
+    print(keyProg)
+    while j < len(mess):
+        i = 0
+        while i < 33:
+            if mess[j] == alphabet[i]:
+                outstr += alphabet[(alphabet.index(keyProg[j]) + i) % 33]
+            i += 1
+        j += 1
+    return outstr
+
+
+def VisenerDecrypt(key, mess):
+    alphabet = ['А', 'Б', 'В', 'Г', 'Д', 'Е', 'Ё', 'Ж', 'З', 'И', 'Й', 'К', 'Л', 'М', 'Н', 'О', 'П',
+                'Р', 'С', 'Т', 'У', 'Ф', 'Х', 'Ц', 'Ч', 'Ш', 'Щ', 'Ъ', 'Ы', 'Ь', 'Э', 'Ю', 'Я']
+    key = getAlphKey(key)
+    key = key.upper()
+    i = 0
+    mess = mess.upper()
+    keyUpd = ''
+    messageUpd = ''
+    while i < len(key):
+        if key[i] in alphabet:
+            keyUpd += key[i]
+        i += 1
+    if keyUpd == '':
+        return 'error in key input'
+    else:
+        key = str(keyUpd)
+    i = 0
+    key = getProgKey(key, mess, alphabet)
+    while i < len(mess):
+        if mess[i] in alphabet:
+            messageUpd += mess[i]
+        i += 1
+    if messageUpd == '':
+        mess = 'ERROR in message input'
+    else:
+        mess = str(messageUpd)
+    j = 0
+    decryptedStr = ''
+    while j < len(mess):
+        decryptedStr += alphabet[(alphabet.index(mess[j]) - alphabet.index(key[j]))]
+        j += 1
+    return decryptedStr
+
+
+def opf():
+    fl = filedialog.askopenfile(filetypes=(("text files", "*.txt"), ("all files", "*.*")))
+    textToEncrypt.insert(t.END, st)
+    f.close()
+
+
+def main():
+    window = t.Tk()
+    window.title('Welcome')
+    window.geometry('1500x1000')
+    window.configure(background = 'light gray')
+
+    textToEncrypt = t.Text(window, width=45, height=10, font='Arial 20')
+    textToEncrypt.place(x='500', y='70')
+    labelEncText = t.Label(text='Enter the text to encrypt:', font='Arial 20', background = 'light gray')
+    labelEncText.place(x='500', y='30')
+
+    textToDecrypt = t.Text(window, width=45, height=10, font='Arial 20')
+    textToDecrypt.place(x='500', y='420')
+    labelDecText = t.Label(text='Enter the text to decrypt:', font='Arial 20', background = 'light gray')
+    labelDecText.place(x='500', y='380')
+
+    image = ImageTk.PhotoImage(file = 'but.png')
+    btnOP = t.Button(window, text = 'Open File', width = 10, height = 1,
+                     font = 'Arial 20')
+    btnOP.place(x ='925' , y = '40' )
+    btnOP2 = t.Button(window, text='Open File', width=10, height=1, font='Arial 20'
+                     )
+    btnOP2.place(x='925', y='390')
+    btnOP['command'] = lambda:textToEncrypt.insert(1.0, open('Select File.txt', 'r').read())
+    btnOP2['command'] = lambda: textToDecrypt.insert(1.0, open('Select File.txt', 'r').read())
+
+    btnOPGRD = t.Button(window, text = 'Open for grd', width = 10, height = 1, font = 'Arial 20')
+    btnOPGRD.place(x='1050', y='40')
+    btnOPGRD['command'] = lambda: textToEncrypt.insert(1.0, open('seld.txt', 'r').read())
+
+    btnOPGRD2 = t.Button(window, text='Open for grd', width=10, height=1, font='Arial 20')
+    btnOPGRD2.place(x='1050', y='390')
+    btnOPGRD2['command'] = lambda: textToDecrypt.insert(1.0, open('seld.txt', 'r').read())
+
+    btnEncRail = t.Button(window,text='Railway', width=10, height=2,
+                          font='Arial 20', border = 0)
+    btnEncRail.place(x='1050', y='70')
+    btnEncRail['command'] = lambda: textToDecrypt.insert(1.0,cryptedRailWay(keyEnter.get(), textToEncrypt.get(1.0, t.END)))
+
+    btnEncGrd = t.Button(window, text='Grid', width=10, height=2,
+                         font='Arial 20')
+    btnEncGrd.place(x='1050', y='125')
+    btnEncGrd['command'] = lambda: textToDecrypt.insert(1.0, rotgrd(textToEncrypt.get(1.0, t.END)))
+    btnEncVis = t.Button(window, text='Visener', width=10, height=2,
+                         font='Arial 20')
+    btnEncVis.place(x='1050', y='180')
+    btnEncVis['command'] = lambda: textToDecrypt.insert(1.0,VisenerCrypt(keyEnter.get(), textToEncrypt.get(1.0, t.END)))
+
+    btnEncSav = t.Button(window, text='Save file', width=7, height=1,
+                         font='Arial 30')
+    btnEncSav.place(x='1050', y='270')
+    btnEncSav['command'] = lambda: open('Select File.txt', 'w').write(textToEncrypt.get(1.0, t.END))
+
+    btnSav = t.Button(window, text='Save grd', width=7, height=1,
+                         font='Arial 30')
+    btnSav.place(x='1050', y='670')
+    btnSav['command'] = lambda: open('seld.txt', 'w').write(textToEncrypt.get(1.0, t.END))
+
+    btnSav2 = t.Button(window, text='Save grd', width=7, height=1,
+                      font='Arial 30')
+    btnSav2.place(x='1050', y='310')
+    btnSav2['command'] = lambda: open('seld.txt', 'w').write(textToEncrypt.get(1.0, t.END))
+
+    btnClr = t.Button(window, text='Clear', width=45, height=1,
+                      font='Arial 20')
+    btnClr.place(x='500', y='310')
+    btnClr['command'] = lambda: textToEncrypt.delete(1.0, t.END)
+
+    btnDecRail = t.Button(window, text='Railway', width=10, height=2,
+                          font='Arial 20')
+    btnDecRail.place(x='1050', y='420')
+    btnDecRail['command'] = lambda: textToEncrypt.insert(1.0, decryptedRailWay(keyEnter.get(), textToDecrypt.get(1.0, t.END)))
+    btnDecGrd = t.Button(window, text='Grid', width=10, height=2,
+                         font='Arial 20')
+    btnDecGrd.place(x='1050', y='475')
+    btnDecGrd['command'] = lambda: textToEncrypt.insert(1.0, decGrd(textToDecrypt.get(1.0, t.END)))
+    btnDecVis = t.Button(window, text='Visener', width=10, height=2,
+                         font='Arial 20')
+    btnDecVis.place(x='1050', y='530')
+    btnDecVis['command'] = lambda: textToEncrypt.insert(1.0, VisenerDecrypt(keyEnter.get(), textToDecrypt.get(1.0, t.END)))
+
+    btnDecSav = t.Button(window, text='Save file', width=7, height=1,
+                         font='Arial 30')
+    btnDecSav.place(x='1050', y='620')
+    btnDecSav['command'] = lambda: open('Select File.txt', 'w').write(textToDecrypt.get(1.0, t.END))
+
+    btnClr2 = t.Button(window, text='Clear', width=45, height=1,
+                       font='Arial 20', activeforeground = 'blue', highlightcolor = 'blue')
+    btnClr2.place(x='500', y='660')
+    btnClr2['command'] = lambda: textToDecrypt.delete(1.0, t.END)
+
+    labelKey = t.Label(text='Enter the Key:', font='Arial 20', background = 'light gray')
+    labelKey.place(x='10', y='50')
+
+    keyEnter = t.Entry(window, font='Arial 20', width=25)
+    keyEnter.place(x='10', y='100')
+    keyClr = t.Button(window, text='Clear', width=23, height=1,
+                      font='Arial 20')
+    keyClr.place(x='10', y='145')
+    keyClr['command'] = lambda: keyEnter.delete(0, t.END)
+
+    window.mainloop()
+
+
+main()
